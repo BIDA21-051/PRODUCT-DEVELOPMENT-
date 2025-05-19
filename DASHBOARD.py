@@ -63,7 +63,7 @@ def train_ai_model(data):
 # 3) TRAIN OR LOAD MODELS
 # -----------------------------
 # Load data first
-uploaded_file = st.file_uploader("Upload CSV file", type="csv")
+uploaded_file = st.file_uploader(r"C:\Users\bida21-051\OneDrive - Botswana Accountancy College\Documents\YEAR 4\semester 2\Product Development Material", type="csv")
 if uploaded_file is not None:
     df = load_data(uploaded_file)
 else:
