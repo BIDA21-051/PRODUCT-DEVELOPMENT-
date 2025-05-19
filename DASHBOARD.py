@@ -68,7 +68,7 @@ try:
     reg   = joblib.load('regression_model.pkl')
     acc   = None  # accuracy only computed on fresh training
 except:
-    model, iso, reg, acc = train_ai_model(df)
+    model, iso, reg, acc = train_ai_model(data)
     joblib.dump(model, 'ai_model.pkl')
     joblib.dump(iso,   'anomaly_detector.pkl')
     joblib.dump(reg,   'regression_model.pkl')
