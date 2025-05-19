@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -5,146 +6,169 @@ import plotly.express as px
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier, IsolationForest
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import accuracy_score, mean_squared_error
-from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
 import joblib
-import datetime
 
-# Load data
+# -----------------------------
+# 1) DATA LOADING
+# -----------------------------
+@st.cache_data
 def load_data():
+    # a) try a local copy (if committed to your repo)
     local_path = os.path.join(os.path.dirname(__file__), "cleaned_iis_logs.csv")
     if os.path.exists(local_path):
         return pd.read_csv(local_path)
-    url = "1\OneDrive - Botswana Accountancy College\Documents\YEAR 4\semester 2\Product Development Material"
+
+    # b) fallback to an external, publicly accessible URL
+    #    ← replace this with your actual “raw download” link
+    url = "https://www.dropbox.com/s/AbCdEfGhIjKlMnO/cleaned_iis_logs.csv?dl=1"
     return pd.read_csv(url)
 
-# AI Model Development
+df = load_data()
+
+
+# -----------------------------
+# 2) AI MODEL DEVELOPMENT
+# -----------------------------
 def train_ai_model(data):
-    # Predictive Model (Conversion Classification)
+    # prepare features & target
     X = data.drop(['conversion_status', 'timestamp', 'ip_address', 'city', 'session_id'], axis=1)
     y = data['conversion_status']
-    
+
+    # split
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    
-    # Classification Model
-    clf = RandomForestClassifier(n_estimators=100)
+
+    # 2a) Classification model
+    clf = RandomForestClassifier(n_estimators=100, random_state=42)
     clf.fit(X_train, y_train)
     y_pred = clf.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    
-    # Anomaly Detection
-    iso = IsolationForest(contamination=0.1)
-    anomalies = iso.fit_predict(X)
-    
-    # Regression Model (Session Duration Prediction)
-    reg = LinearRegression()
-    reg.fit(X_train, X_train['session_duration'])
-    
-    return clf, iso, reg, accuracy
+    acc = accuracy_score(y_test, y_pred)
 
-# Train or load models
+    # 2b) Anomaly detector
+    iso = IsolationForest(contamination=0.1, random_state=42)
+    iso.fit(X)
+
+    # 2c) Simple regression on session_duration → conversion (example)
+    #    If you want a true continuous target, swap y_train for your numeric column.
+    reg = LinearRegression()
+    reg.fit(X_train[['session_duration']], y_train)
+
+    return clf, iso, reg, acc
+
+
+# -----------------------------
+# 3) TRAIN OR LOAD MODELS
+# -----------------------------
 try:
     model = joblib.load('ai_model.pkl')
-    iso = joblib.load('anomaly_detector.pkl')
-    reg = joblib.load('regression_model.pkl')
+    iso   = joblib.load('anomaly_detector.pkl')
+    reg   = joblib.load('regression_model.pkl')
+    acc   = None  # accuracy only computed on fresh training
 except:
     model, iso, reg, acc = train_ai_model(df)
     joblib.dump(model, 'ai_model.pkl')
-    joblib.dump(iso, 'anomaly_detector.pkl')
-    joblib.dump(reg, 'regression_model.pkl')
+    joblib.dump(iso,   'anomaly_detector.pkl')
+    joblib.dump(reg,   'regression_model.pkl')
 
-# Streamlit Dashboard
+
+# -----------------------------
+# 4) BUILD STREAMLIT DASHBOARD
+# -----------------------------
 st.set_page_config(layout="wide")
 st.title("AI Solutions Business Dashboard")
 
-# Executive Leadership Section
+# — Executive KPIs —
 st.header("Executive Leadership KPIs")
-col1, col2, col3 = st.columns(3)
-with col1:
-    countries = df[[c for c in df.columns if 'country_' in c]].sum().sort_values(ascending=False)
-    st.metric("Global Market Penetration", f"{len(countries)} Countries")
-    
-with col2:
-    overall_cr = df.conversion_status.mean() * 100
-    st.metric("Overall Conversion Rate", f"{overall_cr:.1f}%")
-    
-with col3:
-    cac = df[df['traffic_source_Paid Ads'] == 1].shape[0] / df.conversion_status.sum()
+c1, c2, c3 = st.columns(3)
+with c1:
+    countries = df[[c for c in df.columns if c.startswith('country_')]].sum()
+    st.metric("Global Market Penetration", f"{(countries>0).sum()} Countries")
+with c2:
+    st.metric("Overall Conversion Rate", f"{df.conversion_status.mean()*100:.1f}%")
+with c3:
+    paid = df[df['traffic_source_Paid Ads']==1]
+    cac = paid.shape[0] / df.conversion_status.sum() if df.conversion_status.sum() else np.nan
     st.metric("CAC (Paid Ads)", f"${cac:.2f}")
 
-# Sales & Marketing Section
+
+# — Sales & Marketing KPIs —
 st.header("Sales & Marketing KPIs")
-col1, col2, col3 = st.columns(3)
-with col1:
-    demo_requests = df.demo_request.sum()
-    st.metric("Total Demo Requests", demo_requests)
-    
-with col2:
-    paid_ads_cr = df[df['traffic_source_Paid Ads'] == 1].conversion_status.mean() * 100
-    st.metric("Paid Ads CR", f"{paid_ads_cr:.1f}%")
-    
-with col3:
-    region_perf = df[[c for c in df.columns if 'region_' in c]].sum().idxmax().split('_')[1]
-    st.metric("Top Performing Region", region_perf)
+c1, c2, c3 = st.columns(3)
+with c1:
+    st.metric("Total Demo Requests", int(df.demo_request.sum()))
+with c2:
+    paid_cr = df[df['traffic_source_Paid Ads']==1].conversion_status.mean()*100
+    st.metric("Paid Ads CR", f"{paid_cr:.1f}%")
+with c3:
+    top_region = df[[c for c in df.columns if c.startswith('region_')]].sum().idxmax().split('_',1)[1]
+    st.metric("Top Performing Region", top_region)
 
-# Product Development Section
+
+# — Product Development KPIs —
 st.header("Product Development KPIs")
-col1, col2, col3 = st.columns(3)
-with col1:
-    product_cr = df[[c for c in df.columns if 'product_' in c]].mean().idxmax().split('_')[1]
-    st.metric("Best Converting Product", product_cr)
-    
-with col2:
-    avg_engagement = df.engagement_score.mean()
-    st.metric("Average Engagement Score", f"{avg_engagement:.2f}")
-    
-with col3:
-    bounce_rate = df.bounce_rate.mean() * 100
-    st.metric("Average Bounce Rate", f"{bounce_rate:.1f}%")
+c1, c2, c3 = st.columns(3)
+with c1:
+    best_prod = df[[c for c in df.columns if c.startswith('product_')]].mean().idxmax().split('_',1)[1]
+    st.metric("Best Converting Product", best_prod)
+with c2:
+    st.metric("Average Engagement Score", f"{df.engagement_score.mean():.2f}")
+with c3:
+    st.metric("Average Bounce Rate", f"{df.bounce_rate.mean()*100:.1f}%")
 
-# Visualizations
+
+# — Data Visualizations —
 st.header("Data Visualizations")
 
-# Geographical Performance Map
-country_data = df[[c for c in df.columns if 'country_' in c]].sum().reset_index()
-country_data.columns = ['Country', 'Conversions']
+# Geographical map
+country_data = (
+    df[[c for c in df.columns if c.startswith('country_')]]
+    .sum()
+    .reset_index()
+    .rename(columns={'index':'Country', 0:'Conversions'})
+)
 country_data['Country'] = country_data['Country'].str.replace('country_', '')
-fig = px.choropleth(country_data, 
-                    locations="Country",
-                    locationmode='country names',
-                    color="Conversions",
-                    title="Geographical Conversion Distribution")
-st.plotly_chart(fig, use_container_width=True)
+fig_map = px.choropleth(country_data, locations='Country',
+                        locationmode='country names',
+                        color='Conversions',
+                        title='Geographical Conversion Distribution')
+st.plotly_chart(fig_map, use_container_width=True)
 
-# Time Series Trends
+# Time-series trend
 df['timestamp'] = pd.to_datetime(df['timestamp'])
-time_series = df.resample('D', on='timestamp').conversion_status.mean()
-fig = px.line(time_series, title="Conversion Rate Trend Over Time")
-st.plotly_chart(fig, use_container_width=True)
+ts = df.resample('D', on='timestamp').conversion_status.mean().fillna(0)
+fig_ts = px.line(ts, title='Daily Conversion Rate Over Time')
+st.plotly_chart(fig_ts, use_container_width=True)
 
-# Traffic Source Analysis
-traffic = df[[c for c in df.columns if 'traffic_source_' in c]].sum()
-fig = px.pie(traffic, values=traffic.values, names=traffic.index, title="Traffic Source Distribution")
-st.plotly_chart(fig, use_container_width=True)
+# Traffic source pie
+traffic = df[[c for c in df.columns if c.startswith('traffic_source_')]].sum()
+fig_pie = px.pie(values=traffic.values, names=traffic.index,
+                 title='Traffic Source Distribution')
+st.plotly_chart(fig_pie, use_container_width=True)
 
-# Anomaly Detection
+
+# — Anomaly Detection —
 st.header("Anomaly Detection")
-anomalies = iso.predict(df.drop(['conversion_status', 'timestamp', 'ip_address', 'city', 'session_id'], axis=1))
-df['anomaly'] = anomalies
-st.dataframe(df[df['anomaly'] == -1].head(), use_container_width=True)
+X_full = df.drop(['conversion_status','timestamp','ip_address','city','session_id'], axis=1)
+df['anomaly'] = iso.predict(X_full)
+st.dataframe(df[df['anomaly']==-1].head(), use_container_width=True)
 
-# Model Performance
+
+# — Model Performance —
 st.header("AI Model Performance")
-st.write(f"Current Conversion Prediction Accuracy: {accuracy_score(y_test, y_pred)*100:.1f}%")
+if acc is not None:
+    st.write(f"Conversion Prediction Accuracy (test set): **{acc*100:.1f}%**")
+else:
+    st.write("Model loaded from disk; accuracy not recomputed.")
 
-# Real-time Prediction Interface
-st.header("Real-time Prediction")
-with st.form("prediction_form"):
-    session_dur = st.number_input("Session Duration")
-    page_views = st.number_input("Page Views")
-    submitted = st.form_submit_button("Predict Conversion")
+
+# — Real-time Prediction —
+st.header("Real-time Conversion Prediction")
+with st.form("predict_form"):
+    session_dur = st.number_input("Session Duration", min_value=0.0, value=0.0)
+    page_views  = st.number_input("Page Views",      min_value=0,   value=1)
+    submitted   = st.form_submit_button("Predict")
     if submitted:
-        sample = pd.DataFrame([[session_dur, page_views]], 
-                            columns=['session_duration', 'page_views'])
-        prediction = model.predict(sample)
-        st.write(f"Conversion Prediction: {'Likely' if prediction[0] else 'Unlikely'}")
+        sample = pd.DataFrame([[session_dur, page_views]],
+                              columns=['session_duration','page_views'])
+        pred = model.predict(sample)[0]
+        st.success(f"Conversion is **{'Likely' if pred else 'Unlikely'}**")
