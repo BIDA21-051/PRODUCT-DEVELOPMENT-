@@ -1,1 +1,9 @@
-pip install streamlit pandas plotly scikit-learn joblib
+streamlit
+pandas
+plotly
+scikit-learn
+joblib
+rich
+markdown-it-py
+pygments
+mdurl
