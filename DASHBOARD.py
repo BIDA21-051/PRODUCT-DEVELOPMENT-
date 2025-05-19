@@ -62,17 +62,29 @@ def train_ai_model(data):
 # -----------------------------
 # 3) TRAIN OR LOAD MODELS
 # -----------------------------
+# Load data first
+uploaded_file = st.file_uploader("Upload CSV file", type="csv")
+if uploaded_file is not None:
+    df = load_data(uploaded_file)
+else:
+    df = load_data()  # Fallback to local/URL data
+
+# Validate data before proceeding
+if df.empty:
+    st.error("No data available. Upload a CSV or ensure fallback data exists.")
+    st.stop()
+
+# Train or load models
 try:
     model = joblib.load('ai_model.pkl')
     iso   = joblib.load('anomaly_detector.pkl')
     reg   = joblib.load('regression_model.pkl')
-    acc   = None  # accuracy only computed on fresh training
-except:
-    model, iso, reg, acc = train_ai_model(data)
+    acc   = None
+except FileNotFoundError:
+    model, iso, reg, acc = train_ai_model(df)
     joblib.dump(model, 'ai_model.pkl')
     joblib.dump(iso,   'anomaly_detector.pkl')
     joblib.dump(reg,   'regression_model.pkl')
-
 
 # -----------------------------
 # 4) BUILD STREAMLIT DASHBOARD
