@@ -7,6 +7,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from statsmodels.tsa.arima.model import ARIMA
 
+# ---- SET PAGE CONFIG FIRST! ----
+st.set_page_config(page_title="AI-Solutions Dashboard", layout="wide")
+
 # --- DATA LOADING AND CLEANING ---
 
 @st.cache_data
@@ -71,7 +74,6 @@ else:
 
 # --- DASHBOARD LAYOUT ---
 
-st.set_page_config(page_title="AI-Solutions Dashboard", layout="wide")
 st.title("AI-Solutions Live Dashboard")
 st.sidebar.title("Navigation")
 tab = st.sidebar.radio("Go to", ["Executive Leadership", "Sales & Marketing", "Product Development & Management"])
