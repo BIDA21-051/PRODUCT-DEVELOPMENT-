@@ -16,7 +16,7 @@ import joblib
 def load_data():
     try:
         # a) try a local copy first
-        local_path = os.path.join(os.path.dirname(__file__), "C:\Users\bida21-051\OneDrive - Botswana Accountancy College\Documents\YEAR 4\semester 2\Product Development Material")
+        local_path = os.path.join(os.path.dirname(__file__), r"C:\Users\bida21-051\OneDrive - Botswana Accountancy College\Documents\YEAR 4\semester 2\Product Development Material")
         if os.path.exists(local_path):
             return pd.read_csv(local_path)
         
