@@ -11,11 +11,12 @@ import joblib
 import datetime
 
 # Load data
-@st.cache_data
 def load_data():
-    return pd.read_csv("1\OneDrive - Botswana Accountancy College\Documents\YEAR 4\semester 2\Product Development Material")
-
-df = load_data()
+    local_path = os.path.join(os.path.dirname(__file__), "cleaned_iis_logs.csv")
+    if os.path.exists(local_path):
+        return pd.read_csv(local_path)
+    url = "1\OneDrive - Botswana Accountancy College\Documents\YEAR 4\semester 2\Product Development Material"
+    return pd.read_csv(url)
 
 # AI Model Development
 def train_ai_model(data):
