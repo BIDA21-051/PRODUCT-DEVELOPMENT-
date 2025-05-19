@@ -13,7 +13,7 @@ import datetime
 # Load data
 @st.cache_data
 def load_data():
-    return pd.read_csv("cleaned_iis_logs.csv")
+    return pd.read_csv("1\OneDrive - Botswana Accountancy College\Documents\YEAR 4\semester 2\Product Development Material")
 
 df = load_data()
 
