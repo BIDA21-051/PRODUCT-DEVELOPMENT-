@@ -16,13 +16,13 @@ import joblib
 def load_data():
     try:
         # a) try a local copy first
-        local_path = os.path.join(os.path.dirname(__file__), "1\OneDrive - Botswana Accountancy College\Documents\YEAR 4\semester 2\Product Development Material")
+        local_path = os.path.join(os.path.dirname(__file__), "C:\Users\bida21-051\OneDrive - Botswana Accountancy College\Documents\YEAR 4\semester 2\Product Development Material")
         if os.path.exists(local_path):
             return pd.read_csv(local_path)
         
         # b) use a proper OneDrive sharing link
         # Replace with your actual OneDrive sharing link
-        onedrive_url = "https://mybac-my.sharepoint.com/:x:/g/personal/bida21-051_thuto_bac_ac_bw/EReP4H9Ca6JLkPgGuPpU2ggBrNg5wt0NBBUsH9qERMZNmQ?download=1"
+        onedrive_url = "https://mybac-my.sharepoint.com/:x:/g/personal/bida21-051_thuto_bac_ac_bw/ERvqTwH0ASdKvIlmWvDLQO4B-uyqM8L8sbtki44NAWO4nQ?download=1"
         return pd.read_csv(onedrive_url)
     
     except Exception as e:
