@@ -25,10 +25,30 @@ def load_data():
         onedrive_url = "https://mybac-my.sharepoint.com/:x:/g/personal/bida21-051_thuto_bac_ac_bw/ERvqTwH0ASdKvIlmWvDLQO4B-uyqM8L8sbtki44NAWO4nQ?download=1"
         return pd.read_csv(onedrive_url)
     
+# 1) Let user optionally upload
+uploaded_file = st.file_uploader("Upload cleaned IIS logs CSV", type="csv")
+if uploaded_file is not None:
+    try:
+        # uploaded_file is a BytesIO-like object
+        df = pd.read_csv(uploaded_file)
     except Exception as e:
-        st.error(f"Error loading data: {str(e)}")
-        return pd.DataFrame()  # Return empty dataframe as fallback
+        st.error(f"Error parsing uploaded CSV: {e}")
+        st.stop()
+else:
+    # 2) Fallback to local file or hosted URL
+    try:
+        df = load_data_fallback()
+    except Exception as e:
+        st.error(f"Error loading fallback CSV: {e}")
+        st.stop()
 
+# 3) Validate
+if df is None or df.empty:
+    st.error("No data available—please upload a CSV or ensure the fallback file exists.")
+    st.stop()
+
+# At this point you have a valid `df` to work with:
+st.success(f"Loaded {len(df)} rows of data.")
 
 # -----------------------------
 # 2) AI MODEL DEVELOPMENT
