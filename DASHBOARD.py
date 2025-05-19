@@ -14,17 +14,20 @@ import joblib
 # -----------------------------
 @st.cache_data
 def load_data():
-    # a) try a local copy (if committed to your repo)
-    local_path = os.path.join(os.path.dirname(__file__), "cleaned_iis_logs.csv")
-    if os.path.exists(local_path):
-        return pd.read_csv(local_path)
-
-    # b) fallback to an external, publicly accessible URL
-    #    ← replace this with your actual “raw download” link
-    url = "1\OneDrive - Botswana Accountancy College\Documents\YEAR 4\semester 2\Product Development Material"
-    return pd.read_csv(url)
-
-df = load_data()
+    try:
+        # a) try a local copy first
+        local_path = os.path.join(os.path.dirname(__file__), "cleaned_iis_logs.csv")
+        if os.path.exists(local_path):
+            return pd.read_csv(local_path)
+        
+        # b) use a proper OneDrive sharing link
+        # Replace with your actual OneDrive sharing link
+        onedrive_url = "https://mybac-my.sharepoint.com/:x:/g/personal/bida21-051_thuto_bac_ac_bw/EReP4H9Ca6JLkPgGuPpU2ggBrNg5wt0NBBUsH9qERMZNmQ?download=1"
+        return pd.read_csv(onedrive_url)
+    
+    except Exception as e:
+        st.error(f"Error loading data: {str(e)}")
+        return pd.DataFrame()  # Return empty dataframe as fallback
 
 
 # -----------------------------
