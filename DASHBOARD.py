@@ -21,7 +21,7 @@ def load_data():
 
     # b) fallback to an external, publicly accessible URL
     #    ← replace this with your actual “raw download” link
-    url = "https://www.dropbox.com/s/AbCdEfGhIjKlMnO/cleaned_iis_logs.csv?dl=1"
+    url = "1\OneDrive - Botswana Accountancy College\Documents\YEAR 4\semester 2\Product Development Material"
     return pd.read_csv(url)
 
 df = load_data()
